@@ -3,5 +3,7 @@ module BloomFilter
   )
 where
 
+import HashFunction
+
 someFunc :: String
 someFunc = "Hello CIS 5520"
