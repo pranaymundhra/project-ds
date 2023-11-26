@@ -63,12 +63,23 @@ calibrateHashFunctions original sizeRatio = undefined
 
 data BinaryElem = Zero | One
 
-data BinaryNum = BinaryElem | Cons BinaryElem BinaryNum
+data BinaryNum = Single BinaryElem | Cons BinaryElem BinaryNum
 
 data MinBinaryNum = MinZero | MinOne | Tail BinaryNum
 
+-- tail means 1 followed by the BinaryNum
+
 convertBinaryToInt :: MinBinaryNum -> Int
-convertBinaryToInt = undefined
+convertBinaryToInt MinZero = 0
+convertBinaryToInt MinOne = 1
+convertBinaryToInt (Tail b) = go b 1 2
+  where
+    go :: BinaryNum -> Int -> Int -> Int
+    go b multiplier sum = case b of
+      Single Zero -> sum
+      Single One -> sum + multiplier
+      Cons Zero binNum -> go binNum (multiplier + 1) sum
+      Cons One binNum -> go binNum (multiplier + 1) (sum + multiplier)
 
 -- a "bad" (non-injective) converter from binary numbers to integers
 -- multiply each number by its index + 1
