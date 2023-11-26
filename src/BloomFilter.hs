@@ -4,7 +4,7 @@ module BloomFilter
 where
 
 import Control.Applicative qualified as IntMap
-import Data.IntMap (IntMap)
+import Data.IntSet (IntSet)
 import HashFunction (Hash, genBoundedIntHasher)
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, randomIO, uniform, uniformR)
@@ -15,8 +15,8 @@ mkStdGen = Random.mkStdGen . (* (3 :: Int) ^ (20 :: Int))
 -- TODO AN IMPORTANT DECISION: DO WE WANT TO USE A SET OR A MAP?
 
 data BloomFilter a = Filter
-  { max :: a,
-    internalMap :: IntMap Bool,
+  { maxHashed :: Int,
+    internalSet :: IntSet,
     hashFunctions :: [Hash a]
   }
 
@@ -25,18 +25,18 @@ create = undefined
 
 -- empty bloomfilter
 
-fromList :: [Hash a] -> [a] -> BloomFilter a
+fromList :: [Hash a] -> Int -> [a] -> BloomFilter a
 fromList = undefined
 
-insert :: a -> BloomFilter a
+insert :: a -> BloomFilter a -> BloomFilter a
 insert = undefined
 
-refineHashFunction :: [Hash a] -> BloomFilter a -> BloomFilter a
-refineHashFunction = undefined
+addHashFunctions :: [Hash a] -> BloomFilter a -> BloomFilter a
+addHashFunctions = undefined
 
 -- add hash functions to existing bloom filter
 
-exists :: a -> Bool
+exists :: a -> BloomFilter a -> Bool
 exists = undefined
 
 errorThreshold :: BloomFilter a -> [a] -> Double -> Bool
@@ -56,8 +56,19 @@ calibrateHashFunctions original sizeRatio = undefined
 -- error threshold
 -- THIS ALSO NEEDS A GENERATOR
 
-instance (Eq a) => Eq (BloomFilter a) where
-  (==) :: BloomFilter a -> BloomFilter a -> Bool
-  a == b = undefined
+-- below this goes support for integer based hashing (state monad to create random hash functions)
 
--- EQUALITY WILL DEPEND ON THE INTERNAL DATA STRUCTURE
+-- below that goes an example of how simply a relatively well dispersed function into the integers should
+-- work fine with our bloom filter.
+
+data BinaryElem = Zero | One
+
+data BinaryNum = BinaryElem | Cons BinaryElem BinaryNum
+
+data MinBinaryNum = MinZero | MinOne | Tail BinaryNum
+
+convertBinaryToInt :: MinBinaryNum -> Int
+convertBinaryToInt = undefined
+
+-- a "bad" (non-injective) converter from binary numbers to integers
+-- multiply each number by its index + 1

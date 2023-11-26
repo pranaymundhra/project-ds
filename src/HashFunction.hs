@@ -48,7 +48,7 @@ demo i = do
   return (customShow x)
 
 -- >>> generate (demo 100000)
--- "Hasher with maxHashed = 99999,y mod i = 7,x mod i = 96"
+-- "Hasher with maxHashed = 99999,y mod i = 2,x mod i = 3"
 
 -- for sufficiently large values input to demo, x and y mod i will simply be x and y.
 -- Note that the modulo here will not always be expressed in standard notation for Z/nZ,
