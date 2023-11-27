@@ -24,7 +24,7 @@ create = undefined
 
 -- empty bloomfilter
 
-fromList :: [Hash a] -> Int -> [a] -> BloomFilter a
+fromList :: [Hash a] -> [a] -> BloomFilter a
 fromList = undefined
 
 insert :: a -> BloomFilter a -> BloomFilter a
@@ -142,3 +142,4 @@ q :: [MinBinaryNum] -> (BloomFilter Int, StdGen)
 q = z
 
 -- NOTE any quickchecking can now be done with this more familiar type as well as the ints.
+-- writing a test suite should now be easy!
