@@ -3,12 +3,10 @@ module BloomFilter
   )
 where
 
-import Control.Applicative qualified as IntMap
 import Data.IntSet (IntSet)
-import Data.Semigroup (Min)
-import HashFunction (Hash (Hasher), exampleHash, genBoundedIntHasher)
+import HashFunction (Hash (Hasher), exampleHash)
 import System.Random (StdGen)
-import System.Random qualified as Random (mkStdGen, randomIO, uniform, uniformR)
+import System.Random qualified as Random (mkStdGen, uniform)
 
 mkStdGen :: Int -> StdGen
 mkStdGen = Random.mkStdGen . (* (3 :: Int) ^ (20 :: Int))
@@ -80,6 +78,7 @@ instance RandomGen StdGen (Hash Int) where
       hashF h = (h * x + y) `mod` b
 
 -- the below code type checks!
+-- TODO move into inline doctests later
 
 x :: (Bool, StdGen)
 x = errorThreshold (create [exampleHash]) [] 0.1 (mkStdGen 1)
@@ -89,8 +88,9 @@ y = calibrateHashFunctions [] 100 0.1 (mkStdGen 1)
 
 -- Giving integer support means that instead of having to write some kind of generator for
 -- some custom datatype, the user simply needs to define a function (ideally injective)
--- from their datatype into the integers and then we can simply use an integer bloom filter
--- If the function is not injective, false positives are more likely
+-- from that datatype into the integers and then we can simply use an integer bloom filter
+-- If the function is not injective, false positives are more likely due to collision
+-- between the images of the function
 
 class CustomMap a where
   convert :: a -> Int
@@ -143,3 +143,5 @@ q = z
 
 -- NOTE any quickchecking can now be done with this more familiar type as well as the ints.
 -- writing a test suite should now be easy!
+-- IMPORTANT for the quickcheck, remember that the seed fed into the generator should also be randomly
+-- generated
