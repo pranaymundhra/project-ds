@@ -21,9 +21,9 @@ genGeoVal g = go g 0
 
 -- above is used for getting the height- geometrically distributed
 
-data Node a = N {prev :: Maybe (Node a), next :: Maybe (Node a), val :: [a]}
+data Node a = N {prev :: Maybe (Node a), next :: Maybe (Node a), val :: a, below :: Maybe (Node a)}
 
-data SkipList a = Slist {height :: Int, layers :: [Node a], gen :: StdGen}
+data SkipList a = Slist {height :: Int, layers :: [[Node a]], gen :: StdGen}
 
 empty :: Maybe Int -> SkipList a
 empty Nothing = Slist 0 [] (mkStdGen 1)
@@ -35,7 +35,7 @@ fromList seed = foldr insert (empty seed)
 toList :: SkipList a -> [a]
 toList (Slist _ l _) = case l of
   [] -> []
-  n : ns -> val n
+  n : ns -> fmap val n
 
 insert :: a -> SkipList a -> SkipList a
 insert = undefined
@@ -46,7 +46,7 @@ delete = undefined
 length :: SkipList a -> Int
 length (Slist _ l _) = case l of
   [] -> 0
-  n : ns -> Prelude.length (val n)
+  n : ns -> Prelude.length (fmap val n)
 
 contains :: SkipList a -> a -> Bool
 contains = undefined
