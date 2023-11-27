@@ -1,6 +1,7 @@
 module HashFunction
-  ( Hash,
+  ( Hash (Hasher),
     genBoundedIntHasher,
+    exampleHash,
   )
 where
 

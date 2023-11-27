@@ -5,14 +5,13 @@ where
 
 import Control.Applicative qualified as IntMap
 import Data.IntSet (IntSet)
-import HashFunction (Hash, genBoundedIntHasher)
+import Data.Semigroup (Min)
+import HashFunction (Hash (Hasher), exampleHash, genBoundedIntHasher)
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, randomIO, uniform, uniformR)
 
 mkStdGen :: Int -> StdGen
 mkStdGen = Random.mkStdGen . (* (3 :: Int) ^ (20 :: Int))
-
--- TODO AN IMPORTANT DECISION: DO WE WANT TO USE A SET OR A MAP?
 
 data BloomFilter a = Filter
   { maxHashed :: Int,
@@ -39,27 +38,72 @@ addHashFunctions = undefined
 exists :: a -> BloomFilter a -> Bool
 exists = undefined
 
-errorThreshold :: BloomFilter a -> [a] -> Double -> Bool
+-- a generalization of StdGen
+-- when restricted to Int, we want it to be StdGen
+
+class RandomGen g a where
+  next :: g -> Int -> (a, g)
+
+-- the second param is an optional "bound"
+
+instance RandomGen StdGen Int where
+  next :: StdGen -> Int -> (Int, StdGen)
+  next s b = Random.uniform s
+
+errorThreshold :: (RandomGen m a) => BloomFilter a -> [a] -> Double -> m -> (Bool, m)
 errorThreshold = undefined
 
 -- this function takes in a bloom filter, a list of added elements, and
 -- an acceptable error threshold for false positives,
 -- and checks the probability of a false positive versus that threshold
--- WE WANT TO PASS IN SOME FORM OF GENERATOR (USING RANDOM STATE)
 
-calibrateHashFunctions :: BloomFilter a -> Double -> Double -> BloomFilter a
-calibrateHashFunctions original sizeRatio = undefined
+calibrateHashFunctions :: (RandomGen m (Hash a)) => [a] -> Int -> Double -> m -> (BloomFilter a, m)
+calibrateHashFunctions elems size threshold = undefined
 
--- take in a bloom filter and a size ratio > 1 (max ratio we are willing for the output
--- bloom filter internal data structure vs elements put in). Then generate an appropriate
+-- take in a set of elements and size of output bloom filter
+-- Then generate an appropriate
 -- number of hash functions randomly until our false positive error is below the
 -- error threshold
--- THIS ALSO NEEDS A GENERATOR
+-- it is possible for this to enter an infinite loop
 
--- below this goes support for integer based hashing (state monad to create random hash functions)
+-- SUPPORT FOR INTEGER BASED HASHING
 
--- below that goes an example of how simply a relatively well dispersed function into the integers should
--- work fine with our bloom filter.
+uniformInt :: StdGen -> (Int, StdGen)
+uniformInt = Random.uniform
+
+instance RandomGen StdGen (Hash Int) where
+  next :: StdGen -> Int -> (Hash Int, StdGen)
+  next g b = (Hasher b hashF, g'')
+    where
+      (x, g') = uniformInt g
+      (y, g'') = uniformInt g'
+      hashF h = (h * x + y) `mod` b
+
+-- the below code type checks!
+
+x :: (Bool, StdGen)
+x = errorThreshold (create [exampleHash]) [] 0.1 (mkStdGen 1)
+
+y :: (BloomFilter Int, StdGen)
+y = calibrateHashFunctions [] 100 0.1 (mkStdGen 1)
+
+-- Giving integer support means that instead of having to write some kind of generator for
+-- some custom datatype, the user simply needs to define a function (ideally injective)
+-- from their datatype into the integers and then we can simply use an integer bloom filter
+-- If the function is not injective, false positives are more likely
+
+class CustomMap a where
+  convert :: a -> Int
+
+z :: (CustomMap a) => [a] -> (BloomFilter Int, StdGen)
+z m = calibrateHashFunctions (fmap convert m) 100 0.1 (mkStdGen 1)
+
+-- an example of how simply a relatively well dispersed function into the integers
+-- that is NOT injective would work with our bloom filter.
+-- For this, let's use binary
+
+-- an implementation of binary numbers in standard notation (i.e. the only number
+-- that starts with a 0 is 0 itself, so each number has a unique representation)
 
 data BinaryElem = Zero | One
 
@@ -69,17 +113,32 @@ data MinBinaryNum = MinZero | MinOne | Tail BinaryNum
 
 -- tail means 1 followed by the BinaryNum
 
-convertBinaryToInt :: MinBinaryNum -> Int
-convertBinaryToInt MinZero = 0
-convertBinaryToInt MinOne = 1
-convertBinaryToInt (Tail b) = go b 1 2
-  where
-    go :: BinaryNum -> Int -> Int -> Int
-    go b multiplier sum = case b of
-      Single Zero -> sum
-      Single One -> sum + multiplier
-      Cons Zero binNum -> go binNum (multiplier + 1) sum
-      Cons One binNum -> go binNum (multiplier + 1) (sum + multiplier)
+-- simply multiply each number by its index + 1
+-- contrast this with the "obvious" injective function we could have defined that would map
+-- each binary number to its equivalent base 10 value.
 
--- a "bad" (non-injective) converter from binary numbers to integers
--- multiply each number by its index + 1
+instance CustomMap MinBinaryNum where
+  convert :: MinBinaryNum -> Int
+  convert MinZero = 0
+  convert MinOne = 1
+  convert (Tail b) = go b 2 1
+    where
+      go :: BinaryNum -> Int -> Int -> Int
+      go b multiplier sum = case b of
+        Single Zero -> sum
+        Single One -> sum + multiplier
+        Cons Zero binNum -> go binNum (multiplier + 1) sum
+        Cons One binNum -> go binNum (multiplier + 1) (sum + multiplier)
+
+-- Example of why it is not injective:
+-- 10001
+-- >>> convert (Tail (Cons Zero (Cons Zero (Cons Zero (Single One)))))
+-- 6
+-- >>> 111
+-- >>> convert (Tail (Cons One (Single One)))
+-- 6
+
+q :: [MinBinaryNum] -> (BloomFilter Int, StdGen)
+q = z
+
+-- NOTE any quickchecking can now be done with this more familiar type as well as the ints.
