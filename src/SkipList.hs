@@ -1,7 +1,4 @@
-module SkipList
-  (
-  )
-where
+module SkipList where
 
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
