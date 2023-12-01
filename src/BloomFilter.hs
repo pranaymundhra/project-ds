@@ -1,7 +1,8 @@
 module BloomFilter where
 
+-- ask about tries
 import Data.IntSet (IntSet)
-import HashFunction (Hash (Hasher), exampleHash)
+import HashFunction (Hash (Hasher), Seed (Se), exampleHash)
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
 
@@ -39,7 +40,7 @@ exists = undefined
 class RandomGen g a where
   next :: g -> Int -> (a, g)
 
--- the second param is an optional "bound"
+-- the second param is an optional "bound" needed for integer based hashing
 
 instance RandomGen StdGen Int where
   next :: StdGen -> Int -> (Int, StdGen)
@@ -55,6 +56,9 @@ errorThreshold = undefined
 
 calibrateHashFunctions :: (RandomGen m (Hash a)) => [a] -> Int -> Double -> m -> (BloomFilter a, m)
 calibrateHashFunctions elems size threshold = undefined
+
+-- can use gen here instead of this type class
+-- return a gen bool, gen bloomfilter using injection with pure
 
 -- take in a set of elements and size of output bloom filter
 -- Then generate an appropriate
@@ -143,83 +147,3 @@ q = z
 -- writing a test suite should now be easy!
 -- IMPORTANT for the quickcheck, remember that the seed fed into the generator should also be randomly
 -- generated
-
--- TODO move all below tests to test directory
-
-newtype Seed = Se {seededVal :: Int}
-
--- using a custom datatype here so that we can stipulate that quickcheck's shrinking
--- doesn't touch the seed
-
-prop_contains_consistent_int :: Int -> [Hash Int] -> Bool
-prop_contains_consistent_int i hashes = exists i b'
-  where
-    b = create hashes
-    b' = insert i b
-
-prop_toList_consistent_int :: [Int] -> [Hash Int] -> Bool
-prop_toList_consistent_int i hashes = all (`exists` b) i
-  where
-    b = fromList hashes i
-
-prop_errorThreshold_zero_int :: [Int] -> [Hash Int] -> Seed -> Bool
-prop_errorThreshold_zero_int i h (Se seed) = not (fst (errorThreshold b i 0 (mkStdGen seed)))
-  where
-    b = fromList h i
-
-prop_errorThreshold_one_int :: [Int] -> [Hash Int] -> Seed -> Bool
-prop_errorThreshold_one_int i h (Se seed) = fst (errorThreshold b i 1 (mkStdGen seed))
-  where
-    b = fromList h i
-
-prop_contains_consistent_bin :: (CustomMap MinBinaryNum) => MinBinaryNum -> [Hash Int] -> Bool
-prop_contains_consistent_bin ibin hashes = exists i b'
-  where
-    b = create hashes
-    b' = insert i b
-    i = convert ibin
-
-prop_toList_consistent_bin :: (CustomMap MinBinaryNum) => [MinBinaryNum] -> [Hash Int] -> Bool
-prop_toList_consistent_bin ibin hashes = all (`exists` b) i
-  where
-    b = fromList hashes i
-    i = fmap convert ibin
-
-prop_errorThreshold_zero_bin :: (CustomMap MinBinaryNum) => [MinBinaryNum] -> [Hash Int] -> Seed -> Bool
-prop_errorThreshold_zero_bin is h (Se seed) = not (fst (errorThreshold b i 0 (mkStdGen seed)))
-  where
-    b = fromList h i
-    i = fmap convert is
-
-prop_errorThreshold_one_bin :: (CustomMap MinBinaryNum) => [MinBinaryNum] -> [Hash Int] -> Seed -> Bool
-prop_errorThreshold_one_bin is h (Se seed) = fst (errorThreshold b i 1 (mkStdGen seed))
-  where
-    b = fromList h i
-    i = fmap convert is
-
-prop_calibrate_consistent_threshold_int :: [Int] -> Int -> Double -> Seed -> Bool
-prop_calibrate_consistent_threshold_int list num trs (Se seed) =
-  fst (errorThreshold b list trs gen)
-  where
-    (b, m) = calibrateHashFunctions list num trs gen
-    gen = mkStdGen seed
-
--- helper function for convenient conversion from integer representation of binary
--- to custom datatype for testing
-binary :: Int -> MinBinaryNum
-binary = undefined
-
--- not sure if the one for the "bad binary" will terminate or not so no quickcheck there
-{-
-tBinary :: Test
-tBinary =
-  "binary"
-    ~: TestList
-      [ zip "abc" [True, False, True] ~?= [('a', True), ('b', False), ('c', True)],
-        zip "abc" [True] ~?= [('a', True)],
-        zip [] [] ~?= ([] :: [(Int, Int)])
-      ]
-
-z :: (CustomMap a) => [a] -> (BloomFilter Int, StdGen)
-z m = calibrateHashFunctions (fmap convert m) 100 0.1 (mkStdGen 1)
--}

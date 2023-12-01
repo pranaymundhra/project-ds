@@ -1,5 +1,7 @@
 module SkipList where
 
+import Data.List (nub)
+import HashFunction (Seed (Se))
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
 
@@ -18,8 +20,13 @@ genGeoVal g = go g 0
 
 -- above is used for getting the height- geometrically distributed
 
+-- use gen here too
+-- with bind you get it independent for free
+-- insert type Gen SkipList
+
 data Node a = N {prev :: Maybe (Node a), next :: Maybe (Node a), val :: a, below :: Maybe (Node a)}
 
+-- no duplicates supported
 data SkipList a = Slist {height :: Int, layers :: [[Node a]], gen :: StdGen}
 
 empty :: Maybe Int -> SkipList a

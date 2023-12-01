@@ -2,6 +2,7 @@ module HashFunction
   ( Hash (Hasher),
     genBoundedIntHasher,
     exampleHash,
+    Seed (Se),
   )
 where
 
@@ -48,8 +49,10 @@ demo i = do
   return (customShow x)
 
 -- >>> generate (demo 100000)
--- "Hasher with maxHashed = 99999,y mod i = 71,x mod i = 9"
+-- "Hasher with maxHashed = 99999,y mod i = 76,x mod i = 25"
 
 -- for sufficiently large values input to demo, x and y mod i will simply be x and y.
 -- Note that the modulo here will not always be expressed in standard notation for Z/nZ,
 -- but will always be congruent to the correct value.
+
+newtype Seed = Se {seededVal :: Int}
