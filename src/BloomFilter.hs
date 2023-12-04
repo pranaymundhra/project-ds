@@ -30,7 +30,7 @@ b' = BloomFilter.insert 1 b
 
 b'' = BloomFilter.insert 2 b'
 
-genb = errorThreshold' b' [1] 0.2 (chooseInt (1, 8))
+genb = errorThreshold' b' [1] 0.3 (chooseInt (1, 8))
 
 -- >>> exists 8 b'
 -- True
@@ -45,14 +45,14 @@ ml = do
   pure (fmap customShow h)
 
 -- >>> generate ml
--- ["Hasher with maxHashed = 6,y mod i = 0,x mod i = 1","Hasher with maxHashed = 6,y mod i = 1,x mod i = 3"]
+-- ["Hasher with maxHashed = 6,y mod i = 3,x mod i = -2","Hasher with maxHashed = 6,y mod i = 0,x mod i = 1"]
 
 u = do
   a <- calb
-  errorThreshold' a [1] 0 (chooseInt (1, 8))
+  errorThreshold' a [1] 0.15 (chooseInt (1, 8))
 
 -- >>> sample' u
--- [False,True,False,True,False,True,True,True,True,True,True]
+-- [True,True,True,True,True,True,True,True,True,True,True]
 
 fromList :: [Hash a] -> [a] -> BloomFilter a
 fromList h = foldr BloomFilter.insert b
@@ -69,6 +69,9 @@ insert a (Filter mh set hf) =
     x
   where
     x = fmap (\(Hasher _ h) -> h a) hf
+
+addHashFunction :: Hash a -> BloomFilter a -> BloomFilter a
+addHashFunction (Hasher m h) (Filter mh set hf) = Filter (max m mh) set (Hasher m h : hf)
 
 addHashFunctions :: [Hash a] -> BloomFilter a -> BloomFilter a
 addHashFunctions h (Filter mh set hf) = Filter (max mx mh) set (hf ++ h)
@@ -129,7 +132,7 @@ calibrateHashFunctions' elems size tr gen gena blm = do
       (Hasher m d) <- gen
       if m > size
         then calibrateHashFunctions' elems size tr gen gena blm
-        else calibrateHashFunctions' elems size tr gen gena (addHashFunctions [Hasher m d] blm)
+        else calibrateHashFunctions' elems size tr gen gena (addHashFunction (Hasher m d) blm)
 
 -- can use gen here instead of this type class
 -- return a gen bool, gen bloomfilter using injection with pure
