@@ -45,7 +45,7 @@ ml = do
   pure (fmap customShow h)
 
 -- >>> generate ml
--- ["Hasher with maxHashed = 6,y mod i = 3,x mod i = -2","Hasher with maxHashed = 6,y mod i = 0,x mod i = 1"]
+-- ["Hasher with maxHashed = 6,y mod i = 5,x mod i = -3","Hasher with maxHashed = 6,y mod i = 2,x mod i = 3","Hasher with maxHashed = 6,y mod i = 3,x mod i = -1","Hasher with maxHashed = 6,y mod i = 5,x mod i = 0","Hasher with maxHashed = 6,y mod i = 0,x mod i = 1"]
 
 u = do
   a <- calb
@@ -70,13 +70,11 @@ insert a (Filter mh set hf) =
   where
     x = fmap (\(Hasher _ h) -> h a) hf
 
-addHashFunction :: Hash a -> BloomFilter a -> BloomFilter a
-addHashFunction (Hasher m h) (Filter mh set hf) = Filter (max m mh) set (Hasher m h : hf)
-
-addHashFunctions :: [Hash a] -> BloomFilter a -> BloomFilter a
-addHashFunctions h (Filter mh set hf) = Filter (max mx mh) set (hf ++ h)
+addHashFunction :: Hash a -> BloomFilter a -> [a] -> BloomFilter a
+addHashFunction (Hasher m h) (Filter mh set hf) list = Filter (max m mh) newset (Hasher m h : hf)
   where
-    mx = foldr (\(Hasher maxh _) acc -> max maxh acc) 0 h
+    x = fmap h list
+    newset = foldr Data.IntSet.insert set x
 
 -- add hash functions to existing bloom filter
 
@@ -132,7 +130,7 @@ calibrateHashFunctions' elems size tr gen gena blm = do
       (Hasher m d) <- gen
       if m > size
         then calibrateHashFunctions' elems size tr gen gena blm
-        else calibrateHashFunctions' elems size tr gen gena (addHashFunction (Hasher m d) blm)
+        else calibrateHashFunctions' elems size tr gen gena (addHashFunction (Hasher m d) blm elems)
 
 -- can use gen here instead of this type class
 -- return a gen bool, gen bloomfilter using injection with pure
