@@ -1,10 +1,11 @@
 module BloomFilter where
 
 -- ask about tries
-import Data.IntSet (IntSet)
-import HashFunction (Hash (Hasher), Seed (Se), exampleHash)
+import Data.IntSet (IntSet, empty, insert, member)
+import HashFunction (Hash (Hasher), Seed (Se), customShow, exampleHash, genBoundedIntHasher)
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
+import Test.QuickCheck
 
 mkStdGen :: Int -> StdGen
 mkStdGen = Random.mkStdGen . (* (3 :: Int) ^ (20 :: Int))
@@ -16,23 +17,70 @@ data BloomFilter a = Filter
   }
 
 create :: [Hash a] -> BloomFilter a
-create = undefined
+create h = Filter mh empty h
+  where
+    mh = foldr (\(Hasher maxh _) acc -> max maxh acc) 0 h
 
 -- empty bloomfilter
 
+-- move into test cases after class demo
+b = create [exampleHash]
+
+b' = BloomFilter.insert 1 b
+
+b'' = BloomFilter.insert 2 b'
+
+genb = errorThreshold' b' [1] 0.2 (chooseInt (1, 8))
+
+-- >>> exists 8 b'
+-- True
+
+-- >>> sample' genb
+-- [True,True,True,True,True,True,True,True,True,True,True]
+
+calb = calibrateHashFunctions' [1] 7 0.2 (genBoundedIntHasher 7) (chooseInt (1, 8)) b''
+
+ml = do
+  Filter mh i h <- calb
+  pure (fmap customShow h)
+
+-- >>> generate ml
+-- ["Hasher with maxHashed = 6,y mod i = 0,x mod i = 1","Hasher with maxHashed = 6,y mod i = 1,x mod i = 3"]
+
+u = do
+  a <- calb
+  errorThreshold' a [1] 0 (chooseInt (1, 8))
+
+-- >>> sample' u
+-- [False,True,False,True,False,True,True,True,True,True,True]
+
 fromList :: [Hash a] -> [a] -> BloomFilter a
-fromList = undefined
+fromList h = foldr BloomFilter.insert b
+  where
+    b = create h
 
 insert :: a -> BloomFilter a -> BloomFilter a
-insert = undefined
+insert a (Filter mh set hf) =
+  foldr
+    ( \n (Filter mh' set' hf') ->
+        Filter mh' (Data.IntSet.insert n set') hf'
+    )
+    (Filter mh set hf)
+    x
+  where
+    x = fmap (\(Hasher _ h) -> h a) hf
 
 addHashFunctions :: [Hash a] -> BloomFilter a -> BloomFilter a
-addHashFunctions = undefined
+addHashFunctions h (Filter mh set hf) = Filter (max mx mh) set (hf ++ h)
+  where
+    mx = foldr (\(Hasher maxh _) acc -> max maxh acc) 0 h
 
 -- add hash functions to existing bloom filter
 
 exists :: a -> BloomFilter a -> Bool
-exists = undefined
+exists a (Filter mh set hf) = all (`member` set) x
+  where
+    x = fmap (\(Hasher _ h) -> h a) hf
 
 -- a generalization of StdGen
 -- when restricted to Int, we want it to be StdGen
@@ -49,6 +97,21 @@ instance RandomGen StdGen Int where
 errorThreshold :: (RandomGen m a) => BloomFilter a -> [a] -> Double -> m -> (Bool, m)
 errorThreshold = undefined
 
+errorThreshold' :: (Eq a) => BloomFilter a -> [a] -> Double -> Gen a -> Gen Bool
+errorThreshold' filter list threshold gen = go filter list threshold gen 0 10000
+  where
+    go :: (Eq a) => BloomFilter a -> [a] -> Double -> Gen a -> Int -> Int -> Gen Bool
+    go filter list tr gen num left = case left of
+      0 -> pure (num <= floor (tr * 10000))
+      x -> do
+        n <- gen
+        if n `elem` list
+          then go filter list tr gen num left
+          else
+            if exists n filter
+              then go filter list tr gen (num + 1) (left - 1)
+              else go filter list tr gen num (left - 1)
+
 -- this function takes in a bloom filter, a list of added elements, and
 -- an acceptable error threshold for false positives,
 -- and checks the probability of a false positive versus that threshold
@@ -56,6 +119,17 @@ errorThreshold = undefined
 
 calibrateHashFunctions :: (RandomGen m (Hash a)) => [a] -> Int -> Double -> m -> (BloomFilter a, m)
 calibrateHashFunctions elems size threshold = undefined
+
+calibrateHashFunctions' :: (Eq a) => [a] -> Int -> Double -> Gen (Hash a) -> Gen a -> BloomFilter a -> Gen (BloomFilter a)
+calibrateHashFunctions' elems size tr gen gena blm = do
+  a <- vectorOf 10 (errorThreshold' blm elems tr gena)
+  if and a
+    then pure blm
+    else do
+      (Hasher m d) <- gen
+      if m > size
+        then calibrateHashFunctions' elems size tr gen gena blm
+        else calibrateHashFunctions' elems size tr gen gena (addHashFunctions [Hasher m d] blm)
 
 -- can use gen here instead of this type class
 -- return a gen bool, gen bloomfilter using injection with pure
