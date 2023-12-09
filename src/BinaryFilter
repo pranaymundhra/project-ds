@@ -1,0 +1,69 @@
+module BinaryFilter where
+
+-- ask about tries
+import Data.IntSet (IntSet, empty, insert, member)
+import HashFunction (Hash (Hasher), Seed (Se), customShow, exampleHash, genBoundedIntHasher)
+import System.Random (StdGen)
+import System.Random qualified as Random (mkStdGen, uniform)
+import Test.QuickCheck
+import BloomFilter
+
+
+-- an example of how simply a relatively well dispersed function into the integers
+-- that is NOT injective would work with our bloom filter.
+-- For this, let's use binary
+
+-- an implementation of binary numbers in standard notation (i.e. the only number
+-- that starts with a 0 is 0 itself, so each number has a unique representation)
+
+data BinaryElem = Zero | One
+
+data BinaryNum = Single BinaryElem | Cons BinaryElem BinaryNum
+
+data MinBinaryNum = MinZero | MinOne | Tail BinaryNum
+
+-- tail means 1 followed by the BinaryNum
+
+-- simply multiply each number by its index + 1
+-- contrast this with the "obvious" injective function we could have defined that would map
+-- each binary number to its equivalent base 10 value.
+
+instance CustomMap MinBinaryNum where
+  convert :: MinBinaryNum -> Int
+  convert MinZero = 0
+  convert MinOne = 1
+  convert (Tail b) = go b 2 1
+    where
+      go :: BinaryNum -> Int -> Int -> Int
+      go b multiplier sum = case b of
+        Single Zero -> sum
+        Single One -> sum + multiplier
+        Cons Zero binNum -> go binNum (multiplier + 1) sum
+        Cons One binNum -> go binNum (multiplier + 1) (sum + multiplier)
+
+
+createBinary :: Int -> MinBinaryNum
+createBinary i = case i of 
+    0 -> MinZero
+    1 -> MinOne
+    _ -> undefined
+
+binaryConverter :: Int -> [Int] 
+binaryConverter i = if i == 0 then [0] else reverse (go i [])
+  where
+    go i arr = if i == 0 then arr else case mod i 2 of 
+        0 -> go (div i 2) (0 : arr)
+        1 -> go (div i 2) (1 : arr)
+
+-- Example of why it is not injective:
+-- 10001
+
+-- >>> convert (Tail (Cons Zero (Cons Zero (Cons Zero (Single One)))))
+-- 6
+-- 111
+
+-- >>> convert (Tail (Cons One (Single One)))
+-- 6
+
+-- NOTE any quickchecking can now be done with this more familiar type as well as the ints.
+-- writing a test suite should now be easy!

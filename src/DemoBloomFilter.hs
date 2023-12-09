@@ -7,3 +7,5 @@
 -- can just use a pulled dataset
 -- use a library to parse
 -- called cassava
+
+-- final idea: murmur hash along with a list of usernames/passwords to see which ones have been used already

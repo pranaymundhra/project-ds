@@ -5,23 +5,20 @@ import HashFunction
 import Test.HUnit
 import Test.QuickCheck
 
--- using a custom datatype here so that we can stipulate that quickcheck's shrinking
--- doesn't touch the seed
-
 prop_contains_consistent_int :: Int -> [Hash Int] -> Bool
 prop_contains_consistent_int i hashes = exists i b'
   where
     b = create hashes
     b' = insert i b
 
-prop_toList_consistent_int :: [Int] -> [Hash Int] -> Bool
-prop_toList_consistent_int i hashes = all (`exists` b) i
+prop_fromList_consistent_int :: [Int] -> [Hash Int] -> Bool
+prop_fromList_consistent_int i hashes = all (`exists` b) i
   where
     b = fromList hashes i
 
-prop_errorThreshold_zero_int :: [Int] -> [Hash Int] -> Seed -> Bool
+prop_errorThreshold_zero_int :: [Int] -> [Hash Int] -> Bool
 -- you could have the stupid list so this doesn't actually work. Define well later.
-prop_errorThreshold_zero_int i h (Se seed) = not (fst (errorThreshold b i 0 (mkStdGen seed)))
+prop_errorThreshold_zero_int i h = undefined
   where
     b = fromList h i
 
