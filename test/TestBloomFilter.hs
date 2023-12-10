@@ -4,7 +4,6 @@ import BloomFilter
 import HashFunction
 import Test.HUnit
 import Test.QuickCheck
-import Test.QuickCheck.Monadic
 
 prop_contains_consistent_int :: Int -> [Hash Int] -> Bool
 prop_contains_consistent_int i hashes = exists i b'

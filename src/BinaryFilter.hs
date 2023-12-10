@@ -41,14 +41,24 @@ instance CustomMap MinBinaryNum where
         Cons Zero binNum -> go binNum (multiplier + 1) sum
         Cons One binNum -> go binNum (multiplier + 1) (sum + multiplier)
 
+-- >>> convert (Tail (Single Zero))
+-- 1
+
 createBinary :: Int -> MinBinaryNum
-createBinary i = case i of
-  0 -> MinZero
-  1 -> MinOne
-  _ -> undefined
+createBinary i = case binaryConverter i of
+  [0] -> MinZero
+  [1] -> MinOne
+  [] -> error "should never hit"
+  x : xs -> Tail (createBinaryNum xs)
 
 createBinaryNum :: [Int] -> BinaryNum
-createBinaryNum = undefined
+createBinaryNum arr = case arr of
+  [] -> error "should never hit"
+  x : (y : ys) -> Cons (convertElem x) (createBinaryNum (y : ys))
+  [x] -> Single (convertElem x)
+  where
+    convertElem :: Int -> BinaryElem
+    convertElem x = if x == 0 then Zero else One
 
 binaryConverter :: Int -> [Int]
 binaryConverter i = if i == 0 then [0] else go i []
@@ -61,15 +71,32 @@ binaryConverter i = if i == 0 then [0] else go i []
           1 -> go (div i 2) (1 : arr)
           _ -> error "mod is broken"
 
+trueConvert :: MinBinaryNum -> Int
+trueConvert m = case m of
+  MinZero -> 0
+  MinOne -> 1
+  Tail xs -> go xs 1
+    where
+      go ms i = case ms of
+        Single Zero -> i * 2
+        Single One -> i * 2 + 1
+        Cons Zero a -> go a (2 * i)
+        Cons One a -> go a (2 * i + 1)
+
 -- Example of why it is not injective:
 -- 10001
 
 -- >>> convert (Tail (Cons Zero (Cons Zero (Cons Zero (Single One)))))
 -- 6
--- 111
 
 -- >>> convert (Tail (Cons One (Single One)))
 -- 6
+
+-- >>> trueConvert (Tail (Cons Zero (Cons Zero (Cons Zero (Single One)))))
+-- 17
+
+-- >>> trueConvert (Tail (Cons One (Single One)))
+-- 7
 
 -- NOTE any quickchecking can now be done with this more familiar type as well as the ints.
 -- writing a test suite should now be easy!
