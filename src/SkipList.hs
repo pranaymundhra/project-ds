@@ -4,6 +4,7 @@ import Data.List (nub)
 import HashFunction (Seed (Se))
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
+import Test.QuickCheck
 
 mkStdGen :: Int -> StdGen
 mkStdGen = Random.mkStdGen . (* (3 :: Int) ^ (20 :: Int))

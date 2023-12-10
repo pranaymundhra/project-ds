@@ -44,6 +44,8 @@ library
       BloomFilter
       SkipList
       HashFunction
+      BinaryFilter 
+      DemoBloomFilter
   hs-source-dirs:
       src
 

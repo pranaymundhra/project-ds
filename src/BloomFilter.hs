@@ -1,11 +1,10 @@
 module BloomFilter where
 
--- ask about tries
 import Data.IntSet (IntSet, empty, insert, member)
 import HashFunction (Hash (Hasher), Seed (Se), customShow, exampleHash, genBoundedIntHasher)
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
-import Test.QuickCheck
+import Test.QuickCheck (Gen, chooseInt, vectorOf)
 
 {-mkStdGen :: Int -> StdGen
 mkStdGen = Random.mkStdGen . (* (3 :: Int) ^ (20 :: Int))-}

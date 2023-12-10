@@ -1,13 +1,13 @@
 module BinaryFilter where
 
 -- ask about tries
+
+import BloomFilter
 import Data.IntSet (IntSet, empty, insert, member)
 import HashFunction (Hash (Hasher), Seed (Se), customShow, exampleHash, genBoundedIntHasher)
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
 import Test.QuickCheck
-import BloomFilter
-
 
 -- an example of how simply a relatively well dispersed function into the integers
 -- that is NOT injective would work with our bloom filter.
@@ -41,19 +41,25 @@ instance CustomMap MinBinaryNum where
         Cons Zero binNum -> go binNum (multiplier + 1) sum
         Cons One binNum -> go binNum (multiplier + 1) (sum + multiplier)
 
-
 createBinary :: Int -> MinBinaryNum
-createBinary i = case i of 
-    0 -> MinZero
-    1 -> MinOne
-    _ -> undefined
+createBinary i = case i of
+  0 -> MinZero
+  1 -> MinOne
+  _ -> undefined
 
-binaryConverter :: Int -> [Int] 
-binaryConverter i = if i == 0 then [0] else reverse (go i [])
+createBinaryNum :: [Int] -> BinaryNum
+createBinaryNum = undefined
+
+binaryConverter :: Int -> [Int]
+binaryConverter i = if i == 0 then [0] else go i []
   where
-    go i arr = if i == 0 then arr else case mod i 2 of 
-        0 -> go (div i 2) (0 : arr)
-        1 -> go (div i 2) (1 : arr)
+    go i arr =
+      if i == 0
+        then arr
+        else case mod i 2 of
+          0 -> go (div i 2) (0 : arr)
+          1 -> go (div i 2) (1 : arr)
+          _ -> error "mod is broken"
 
 -- Example of why it is not injective:
 -- 10001
