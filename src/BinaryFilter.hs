@@ -5,8 +5,6 @@ module BinaryFilter where
 import BloomFilter
 import Data.IntSet (IntSet, empty, insert, member)
 import HashFunction (Hash (Hasher), Seed (Se), customShow, exampleHash, genBoundedIntHasher)
-import System.Random (StdGen)
-import System.Random qualified as Random (mkStdGen, uniform)
 import Test.QuickCheck
 
 -- an example of how simply a relatively well dispersed function into the integers
