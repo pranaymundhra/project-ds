@@ -43,16 +43,19 @@ data SkipList a = Slist {height :: Int, layers :: [[Node a]]}
 empty :: SkipList a
 empty = Slist 0 []
 
-fromList :: Maybe Int -> [a] -> SkipList a
-fromList seed = foldr insert empty
+fromList :: [a] -> SkipList a
+fromList = foldr insert empty
 
 toList :: SkipList a -> [a]
 toList (Slist _ l) = case l of
   [] -> []
-  n : ns -> fmap val n
+  ns : nss -> fmap val ns
 
 insert :: a -> SkipList a -> SkipList a
-insert = undefined
+insert a (Slist _ []) = undefined
+insert a (Slist _ ([] : ls)) = undefined
+insert a (Slist _ ((n : ns) : ls)) = undefined
+    
 
 delete :: a -> SkipList a -> SkipList a
 delete = undefined
@@ -60,10 +63,20 @@ delete = undefined
 length :: SkipList a -> Int
 length (Slist _ l) = case l of
   [] -> 0
-  n : ns -> Prelude.length (fmap val n)
+  ns : nss -> Prelude.length (fmap val ns)
 
-contains :: SkipList a -> a -> Bool
-contains = undefined
+contains :: Ord a => SkipList a -> a -> Bool
+contains (Slist _ []) a = False
+contains (Slist _ ([] : ls)) a = False
+contains (Slist _ ((n : ns) : ls)) a = loop (Just n) a
+  where
+    loop :: Ord a => Maybe (Node a) -> a -> Bool
+    loop Nothing _ = False
+    loop (Just (N prev next val below)) a =
+      val == a || (if val < a then loop next a else
+        case prev of 
+          Nothing -> False
+          Just (N pprev pnext pval pbelow) -> loop pbelow a)
 
 append :: SkipList a -> SkipList a -> SkipList a
 append x y = foldr insert y (toList x)

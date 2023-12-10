@@ -5,22 +5,26 @@ import SkipList
 import Test.HUnit
 import Test.QuickCheck
 
-prop_length_toList :: [Int] -> Seed -> Bool
-prop_length_toList list (Se seed) =
+prop_length_fromList :: [Int] -> Bool
+prop_length_toList list =
   SkipList.length sl == Prelude.length uniques
-    && toList sl == uniques
   where
     uniques = nub list
-    sl = fromList (Just seed) uniques
+    sl = fromList uniques
 
-prop_skipList_equality :: [Int] -> Seed -> Seed -> Bool
-prop_skipList_equality list (Se seed) (Se second) = sl == sl'
+prop_skipList_fromList_toList_inverses :: [Int] -> Bool
+prop_skipList_fromList_toList_inverses list =
+  toList sl == uniques
   where
-    sl = fromList (Just seed) list
-    sl' = fromList (Just second) list
+    uniques = nub list
+    sl = fromList uniques
 
 prop_skipList_insertion :: SkipList Int -> Int -> Bool
 prop_skipList_insertion = undefined
 
 prop_skipList_deletion :: SkipList Int -> Bool
 prop_skipList_deletion = undefined
+
+testSkipListInsertion :: Test
+testSkipListInsertion =
+  toList (SkipList.insert 1 empty) ~?= [1]
