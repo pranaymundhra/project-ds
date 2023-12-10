@@ -6,6 +6,7 @@ import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
 import Test.QuickCheck
 
+{-
 mkStdGen :: Int -> StdGen
 mkStdGen = Random.mkStdGen . (* (3 :: Int) ^ (20 :: Int))
 
@@ -18,6 +19,15 @@ genGeoVal g = go g 0
     go g hold = if m then (hold, g') else go g' (hold + 1)
       where
         (m, g') = uniformBool g
+-}
+
+genGeoVal :: Gen Int
+genGeoVal = go 0
+  where
+    go i = do
+      x <- chooseInt (0, 1)
+      if x == 1 then return i else go (i + 1)
+
 
 -- above is used for getting the height- geometrically distributed
 
@@ -28,17 +38,16 @@ genGeoVal g = go g 0
 data Node a = N {prev :: Maybe (Node a), next :: Maybe (Node a), val :: a, below :: Maybe (Node a)}
 
 -- no duplicates supported
-data SkipList a = Slist {height :: Int, layers :: [[Node a]], gen :: StdGen}
+data SkipList a = Slist {height :: Int, layers :: [[Node a]]}
 
-empty :: Maybe Int -> SkipList a
-empty Nothing = Slist 0 [] (mkStdGen 1)
-empty (Just seed) = Slist 0 [] (mkStdGen seed)
+empty :: SkipList a
+empty = Slist 0 []
 
 fromList :: Maybe Int -> [a] -> SkipList a
-fromList seed = foldr insert (empty seed)
+fromList seed = foldr insert empty
 
 toList :: SkipList a -> [a]
-toList (Slist _ l _) = case l of
+toList (Slist _ l) = case l of
   [] -> []
   n : ns -> fmap val n
 
@@ -49,7 +58,7 @@ delete :: a -> SkipList a -> SkipList a
 delete = undefined
 
 length :: SkipList a -> Int
-length (Slist _ l _) = case l of
+length (Slist _ l) = case l of
   [] -> 0
   n : ns -> Prelude.length (fmap val n)
 
