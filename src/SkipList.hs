@@ -40,12 +40,11 @@ data Node a = N {prev :: Maybe (Node a), next :: Maybe (Node a), val :: a, below
 -- no duplicates supported
 data SkipList a = Slist {height :: Int, layers :: [[Node a]]}
 
-empty :: Maybe Int -> SkipList a
-empty Nothing = Slist 0 []
-empty (Just seed) = Slist 0 []
+empty :: SkipList a
+empty = Slist 0 []
 
 fromList :: Maybe Int -> [a] -> SkipList a
-fromList seed = foldr insert (empty seed)
+fromList seed = foldr insert empty
 
 toList :: SkipList a -> [a]
 toList (Slist _ l) = case l of
