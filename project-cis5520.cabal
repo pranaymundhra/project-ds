@@ -41,6 +41,9 @@ library
       common-stanza
   exposed-modules:
       Lib
+      BloomFilter
+      SkipList
+      HashFunction
   hs-source-dirs:
       src
 
