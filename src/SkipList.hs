@@ -28,7 +28,6 @@ genGeoVal = go 0
       x <- chooseInt (0, 1)
       if x == 1 then return i else go (i + 1)
 
-
 -- above is used for getting the height- geometrically distributed
 
 -- use gen here too
@@ -55,7 +54,6 @@ insert :: a -> SkipList a -> SkipList a
 insert a (Slist _ []) = undefined
 insert a (Slist _ ([] : ls)) = undefined
 insert a (Slist _ ((n : ns) : ls)) = undefined
-    
 
 delete :: a -> SkipList a -> SkipList a
 delete = undefined
@@ -65,18 +63,21 @@ length (Slist _ l) = case l of
   [] -> 0
   ns : nss -> Prelude.length (fmap val ns)
 
-contains :: Ord a => SkipList a -> a -> Bool
+contains :: (Ord a) => SkipList a -> a -> Bool
 contains (Slist _ []) a = False
 contains (Slist _ ([] : ls)) a = False
 contains (Slist _ ((n : ns) : ls)) a = loop (Just n) a
   where
-    loop :: Ord a => Maybe (Node a) -> a -> Bool
+    loop :: (Ord a) => Maybe (Node a) -> a -> Bool
     loop Nothing _ = False
     loop (Just (N prev next val below)) a =
-      val == a || (if val < a then loop next a else
-        case prev of 
-          Nothing -> False
-          Just (N pprev pnext pval pbelow) -> loop pbelow a)
+      val == a
+        || ( if val < a
+               then loop next a
+               else case prev of
+                 Nothing -> False
+                 Just (N pprev pnext pval pbelow) -> loop pbelow a
+           )
 
 append :: SkipList a -> SkipList a -> SkipList a
 append x y = foldr insert y (toList x)
@@ -84,3 +85,7 @@ append x y = foldr insert y (toList x)
 instance (Eq a) => Eq (SkipList a) where
   (==) :: (Eq a) => SkipList a -> SkipList a -> Bool
   a == b = toList a == toList b
+
+instance (Show a) => Show (SkipList a) where
+  show :: (Show a) => SkipList a -> String
+  show sl = show (toList sl)
