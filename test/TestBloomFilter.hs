@@ -1,9 +1,17 @@
 module TestBloomFilter where
 
+import BinaryFilter
 import BloomFilter
 import HashFunction
 import Test.HUnit
 import Test.QuickCheck
+
+instance Arbitrary (Hash Int) where
+  arbitrary :: Gen (Hash Int)
+  arbitrary = genBoundedIntHasher 5
+
+  shrink :: Hash Int -> [Hash Int]
+  shrink h = []
 
 prop_contains_consistent_int :: Int -> [Hash Int] -> Bool
 prop_contains_consistent_int i hashes = exists i b'
@@ -62,11 +70,6 @@ go list num trs = do
 
 prop_calibrate_consistent_threshold_int :: [Int] -> Int -> Double -> Property
 prop_calibrate_consistent_threshold_int list num trs = p (go list num trs)
-
--- helper function for convenient conversion from integer representation of binary
--- to custom datatype for testing
-binary :: Int -> MinBinaryNum
-binary = undefined
 
 -- not sure if the one for the "bad binary" will terminate or not so no quickcheck there
 {-

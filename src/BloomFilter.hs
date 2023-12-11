@@ -4,7 +4,7 @@ import Data.IntSet (IntSet, empty, insert, member)
 import HashFunction (Hash (Hasher), Seed (Se), customShow, exampleHash, genBoundedIntHasher)
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
-import Test.QuickCheck (Gen, chooseInt, vectorOf)
+import Test.QuickCheck
 
 {-mkStdGen :: Int -> StdGen
 mkStdGen = Random.mkStdGen . (* (3 :: Int) ^ (20 :: Int))-}
@@ -173,3 +173,16 @@ class CustomMap a where
 {-
 z :: (CustomMap a) => [a] -> (BloomFilter Int, StdGen)
 z m = calibrateHashFunctions (fmap convert m) 100 0.1 (mkStdGen 1)-}
+
+prop_contains_consistent_int :: Int -> [Hash Int] -> Bool
+prop_contains_consistent_int i hashes = exists i b'
+  where
+    b = create hashes
+    b' = BloomFilter.insert i b
+
+instance Arbitrary (Hash Int) where
+  arbitrary :: Gen (Hash Int)
+  arbitrary = genBoundedIntHasher 5
+
+  shrink :: Hash Int -> [Hash Int]
+  shrink h = []

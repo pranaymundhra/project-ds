@@ -1,7 +1,5 @@
 module BinaryFilter where
 
--- ask about tries
-
 import BloomFilter
 import Data.IntSet (IntSet, empty, insert, member)
 import HashFunction (Hash (Hasher), Seed (Se), customShow, exampleHash, genBoundedIntHasher)
@@ -96,5 +94,23 @@ trueConvert m = case m of
 -- >>> trueConvert (Tail (Cons One (Single One)))
 -- 7
 
--- NOTE any quickchecking can now be done with this more familiar type as well as the ints.
--- writing a test suite should now be easy!
+instance Show MinBinaryNum where
+  show :: MinBinaryNum -> String
+  show m = show (trueConvert m)
+
+instance Arbitrary MinBinaryNum where
+  arbitrary :: Gen MinBinaryNum
+  arbitrary = fmap createBinary (chooseInt (0, 100))
+  shrink :: MinBinaryNum -> [MinBinaryNum]
+  shrink m = fmap createBinary (divisorList (div i 2) [])
+    where
+      i = trueConvert m
+      divisorList :: Int -> [Int] -> [Int]
+      divisorList n arr = if n == 0 then arr else divisorList (div n 2) (n : arr)
+
+prop_contains_consistent_bin :: MinBinaryNum -> [Hash Int] -> Bool
+prop_contains_consistent_bin ibin hashes = exists i b'
+  where
+    b = create hashes
+    b' = BloomFilter.insert i b
+    i = convert ibin
