@@ -15,12 +15,10 @@ genGeoVal = go 0
       x <- chooseInt (0, 1)
       if x == 1 then return i else go (i + 1)
 
-data Node a = N {
-  next :: Maybe (Node a),
-  val :: a,
-  below :: Maybe (Node a),
-  nHeight :: Int
-}
+data Node a =
+  N {next :: Maybe (Node a), val :: a, below :: Maybe (Node a), nHeight :: Int}
+  -- placeholder leftmost node for each layer (ensures we search everything accurately)
+  | StartNode {next :: Maybe (Node a), below :: Maybe (Node a), nHeight :: Int}
 
 -- no duplicates supported
 data SkipList a = Slist {height :: Int, topLeft :: Maybe (Node a)}
@@ -40,10 +38,13 @@ toList (Slist _ tl) = case tl of
   Just n -> listValues (Just $ getBottomLayer n)
     where
       getBottomLayer :: Node a -> Node a
+      getBottomLayer sn@(StartNode _ Nothing _) = sn
+      getBottomLayer sn@(StartNode _ (Just b) _) = getBottomLayer b
       getBottomLayer n@(N _ _ Nothing _) = n
       getBottomLayer (N _ _ (Just b) _) = getBottomLayer b
       listValues :: Maybe (Node a) -> [a]
       listValues Nothing = []
+      listValues (Just (StartNode next _ _)) = listValues next
       listValues (Just (N next v _ _)) = v : listValues next
 
 -- | Inserts the given element into the skip list
@@ -57,6 +58,7 @@ insert a (Slist h layers) = do
         if currHeight == 0 then Just $ N Nothing a Nothing 0
         else Just $ N Nothing a (insertNode a Nothing iHeight (currHeight - 1)) currHeight
       insertNode a (Just n@(N next val below nHeight)) iHeight currHeight = undefined
+      insertNode a _ _ _ = undefined
 
 -- | Deletes the given element from the skip list
 delete :: Ord a => a -> SkipList a -> SkipList a
@@ -65,6 +67,16 @@ delete a (Slist h n) = Slist h (searchAndDelete n a)
   where
     searchAndDelete :: Ord a => Maybe (Node a) -> a -> Maybe (Node a)
     searchAndDelete Nothing _ = Nothing
+    searchAndDelete (Just (StartNode next below nh)) a =
+      case next of
+        Nothing -> Just (StartNode next (searchAndDelete below a) nh)
+        Just ne@(N nnext nval _ _) ->
+          if nval > a then
+            Just (StartNode next (searchAndDelete below a) nh)
+          else if nval < a then
+            Just (StartNode (searchAndDelete next a) below nh)
+          else Just (StartNode nnext (searchAndDelete below a) nh)
+        _ -> searchAndDelete next a
     searchAndDelete (Just n@(N next val below nh)) a =
       case next of
         Nothing -> Just (N next val (searchAndDelete below a) nh)
@@ -74,37 +86,72 @@ delete a (Slist h n) = Slist h (searchAndDelete n a)
           else if nval < a then
             Just (N (searchAndDelete next a) val below nh)
           else Just (N nnext val (searchAndDelete below a) nh)
+        _ -> searchAndDelete next a
 
+-- Get the length (number of elements) of a skip list
 length :: SkipList a -> Int
 length (Slist _ tl) = case tl of
   Nothing -> 0
   Just n -> getLength (Just $ getBottomLayer n)
     where
       getBottomLayer :: Node a -> Node a
+      getBottomLayer sn@(StartNode _ Nothing _) = sn
+      getBottomLayer sn@(StartNode _ (Just b) _) = getBottomLayer b
       getBottomLayer n@(N _ _ Nothing _) = n
       getBottomLayer (N _ _ (Just b) _) = getBottomLayer b
       getLength :: Maybe (Node a) -> Int
       getLength Nothing = 0
+      getLength (Just (StartNode next _ _)) = getLength next
       getLength (Just (N next v _ _)) = 1 + getLength next
 
 -- | Checks whether the skip list contains the given element
 contains :: Ord a => SkipList a -> a -> Bool
 contains (Slist _ Nothing) a = False
-contains (Slist _ n) a = loop n a
+contains (Slist _ n) a = search n a
   where
-    loop :: (Ord a) => Maybe (Node a) -> a -> Bool
-    loop Nothing _ = False
-    loop (Just (N next val below _)) a
+    search :: (Ord a) => Maybe (Node a) -> a -> Bool
+    search Nothing _ = False
+    search (Just (StartNode next below _)) a =
+      case next of
+        Nothing -> search below a
+        Just ne@(N _ nval _ _) ->
+          if nval > a then search below a
+          else search next a
+        _ -> search next a
+    search (Just (N next val below _)) a
       | val == a = True
       | otherwise =
         case next of
-          Nothing -> loop below a
+          Nothing -> search below a
           Just ne@(N _ nval _ _) ->
-            if nval > a then loop below a
-            else loop next a
+            if nval > a then search below a
+            else search next a
+          _ -> search next a
 
+-- Combine two skip lists
 append :: Ord a => SkipList a -> SkipList a -> Gen (SkipList a)
 append x y = foldM (flip insert) y (toList x)
+
+-- Pretty-print the skip list layers
+prettyPrint :: Show a => SkipList a -> IO ()
+prettyPrint (Slist _ Nothing) = putStrLn ""
+prettyPrint (Slist h (Just tl)) = do
+  printLayers (Just tl) h
+  where
+    printNodes :: Show a => Maybe (Node a) -> IO ()
+    printNodes Nothing = putStrLn ""
+    printNodes (Just StartNode {}) = do
+      putStr ". "
+    printNodes (Just (N next v _ _)) = do
+      putStr $ show v ++ " "
+      printNodes next
+    printLayers :: Show a => Maybe (Node a) -> Int -> IO ()
+    printLayers _ 0 = return ()
+    printLayers Nothing _ = return ()
+    printLayers (Just node) curHeight = do
+      putStr "Layer " >> print curHeight >> putStr ": "
+      printNodes (next node)
+      printLayers (below node) (curHeight - 1)
 
 instance (Eq a) => Eq (SkipList a) where
   (==) :: (Eq a) => SkipList a -> SkipList a -> Bool
