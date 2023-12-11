@@ -97,6 +97,8 @@ exists a (Filter mh set hf) = all (`member` set) x
 {-errorThreshold :: (RandomGen m a) => BloomFilter a -> [a] -> Double -> m -> (Bool, m)
 errorThreshold = undefined-}
 
+-- make sure to acknowledge the uniformly distributed assumption and show why we're not messing it up
+
 errorThreshold' :: (Eq a) => BloomFilter a -> [a] -> Double -> Gen a -> Gen Bool
 errorThreshold' filter list threshold gen = go filter list threshold gen 0 10000
   where
@@ -173,16 +175,3 @@ class CustomMap a where
 {-
 z :: (CustomMap a) => [a] -> (BloomFilter Int, StdGen)
 z m = calibrateHashFunctions (fmap convert m) 100 0.1 (mkStdGen 1)-}
-
-prop_contains_consistent_int :: Int -> [Hash Int] -> Bool
-prop_contains_consistent_int i hashes = exists i b'
-  where
-    b = create hashes
-    b' = BloomFilter.insert i b
-
-instance Arbitrary (Hash Int) where
-  arbitrary :: Gen (Hash Int)
-  arbitrary = genBoundedIntHasher 5
-
-  shrink :: Hash Int -> [Hash Int]
-  shrink h = []

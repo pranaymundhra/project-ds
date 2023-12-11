@@ -96,20 +96,3 @@ trueConvert m = case m of
 instance Show MinBinaryNum where
   show :: MinBinaryNum -> String
   show m = show (trueConvert m)
-
-instance Arbitrary MinBinaryNum where
-  arbitrary :: Gen MinBinaryNum
-  arbitrary = fmap createBinary (chooseInt (0, 100))
-  shrink :: MinBinaryNum -> [MinBinaryNum]
-  shrink m = fmap createBinary (divisorList (div i 2) [])
-    where
-      i = trueConvert m
-      divisorList :: Int -> [Int] -> [Int]
-      divisorList n arr = if n == 0 then arr else divisorList (div n 2) (n : arr)
-
-prop_contains_consistent_bin :: MinBinaryNum -> [Hash Int] -> Bool
-prop_contains_consistent_bin ibin hashes = exists i b'
-  where
-    b = create hashes
-    b' = BloomFilter.insert i b
-    i = convert ibin
