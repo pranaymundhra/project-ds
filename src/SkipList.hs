@@ -55,8 +55,10 @@ insert a (Slist h layers) = do
     where
       insertNode :: Ord a => a -> Maybe (Node a) -> Int -> Int -> Maybe (Node a)
       insertNode a Nothing iHeight currHeight =
+      -- TODO - fix to include placeholder StartNodes on each layer
         if currHeight == 0 then Just $ N Nothing a Nothing 0
         else Just $ N Nothing a (insertNode a Nothing iHeight (currHeight - 1)) currHeight
+      -- TODO - general-case insertion logic, make sure to consider case where insertion height > current height
       insertNode a (Just n@(N next val below nHeight)) iHeight currHeight = undefined
       insertNode a _ _ _ = undefined
 
