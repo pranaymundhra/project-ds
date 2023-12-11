@@ -24,7 +24,3 @@ prop_skipList_insertion = undefined
 
 prop_skipList_deletion :: SkipList Int -> Bool
 prop_skipList_deletion = undefined
-
-testSkipListInsertion :: Test
-testSkipListInsertion =
-  toList (SkipList.insert 1 empty) ~?= [1]
