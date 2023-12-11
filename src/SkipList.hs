@@ -92,7 +92,7 @@ contains :: Ord a => SkipList a -> a -> Bool
 contains (Slist _ Nothing) a = False
 contains (Slist _ n) a = loop n a
   where
-    loop :: Ord a => Maybe (Node a) -> a -> Bool
+    loop :: (Ord a) => Maybe (Node a) -> a -> Bool
     loop Nothing _ = False
     loop (Just (N next val below _)) a
       | val == a = True
@@ -109,3 +109,7 @@ append x y = foldM (flip insert) y (toList x)
 instance (Eq a) => Eq (SkipList a) where
   (==) :: (Eq a) => SkipList a -> SkipList a -> Bool
   a == b = toList a == toList b
+
+instance (Show a) => Show (SkipList a) where
+  show :: (Show a) => SkipList a -> String
+  show sl = show (toList sl)

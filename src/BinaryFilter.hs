@@ -80,7 +80,6 @@ trueConvert m = case m of
         Cons One a -> go a (2 * i + 1)
 
 -- Example of why it is not injective:
--- 10001
 
 -- >>> convert (Tail (Cons Zero (Cons Zero (Cons Zero (Single One)))))
 -- 6
