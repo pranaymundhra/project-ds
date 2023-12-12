@@ -150,10 +150,10 @@ prettyPrint (Slist h (Just tl)) = do
     printLayers :: Show a => Maybe (Node a) -> Int -> IO ()
     printLayers _ 0 = return ()
     printLayers Nothing _ = return ()
-    printLayers (Just node) curHeight = do
-      putStr "Layer " >> print curHeight >> putStr ": "
+    printLayers (Just node) h = do
+      putStr "Layer " >> print h >> putStr ": "
       printNodes (next node)
-      printLayers (below node) (curHeight - 1)
+      printLayers (below node) (h - 1)
 
 instance (Eq a) => Eq (SkipList a) where
   (==) :: (Eq a) => SkipList a -> SkipList a -> Bool
