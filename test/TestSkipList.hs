@@ -6,6 +6,7 @@ import Test.HUnit
 import Test.QuickCheck
 
 prop_length_fromList :: [Int] -> Bool
+
 prop_length_toList list =
   SkipList.length sl == Prelude.length uniques
   where

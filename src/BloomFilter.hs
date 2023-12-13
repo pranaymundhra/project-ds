@@ -1,10 +1,11 @@
 module BloomFilter where
 
 import Data.IntSet (IntSet, empty, insert, member)
+import Debug.Trace
 import HashFunction (Hash (Hasher), Seed (Se), customShow, exampleHash, genBoundedIntHasher)
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
-import Test.QuickCheck
+import Test.QuickCheck (Gen, chooseInt, vectorOf)
 
 {-mkStdGen :: Int -> StdGen
 mkStdGen = Random.mkStdGen . (* (3 :: Int) ^ (20 :: Int))-}
@@ -14,6 +15,9 @@ data BloomFilter a = Filter
     internalSet :: IntSet,
     hashFunctions :: [Hash a]
   }
+
+-- >>> maxHashed (fromList [] [0])
+-- 0
 
 create :: [Hash a] -> BloomFilter a
 create h = Filter mh empty h
@@ -57,6 +61,9 @@ fromList :: [Hash a] -> [a] -> BloomFilter a
 fromList h = foldr BloomFilter.insert b
   where
     b = create h
+
+-- >>> exists 79 (fromList [] [0])
+-- True
 
 insert :: a -> BloomFilter a -> BloomFilter a
 insert a (Filter mh set hf) =
@@ -103,16 +110,17 @@ errorThreshold' :: (Eq a) => BloomFilter a -> [a] -> Double -> Gen a -> Gen Bool
 errorThreshold' filter list threshold gen = go filter list threshold gen 0 10000
   where
     go :: (Eq a) => BloomFilter a -> [a] -> Double -> Gen a -> Int -> Int -> Gen Bool
-    go filter list tr gen num left = case left of
-      0 -> pure (num <= floor (tr * 10000))
-      x -> do
-        n <- gen
-        if n `elem` list
-          then go filter list tr gen num left
-          else
-            if exists n filter
-              then go filter list tr gen (num + 1) (left - 1)
-              else go filter list tr gen num (left - 1)
+    go filter list tr gen num left =
+      case left of
+        0 -> pure (num <= floor (tr * 10000))
+        x -> do
+          n <- gen
+          if n `elem` list
+            then go filter list tr gen num left
+            else
+              if exists n filter
+                then go filter list tr gen (num + 1) (left - 1)
+                else go filter list tr gen num (left - 1)
 
 -- this function takes in a bloom filter, a list of added elements, and
 -- an acceptable error threshold for false positives,

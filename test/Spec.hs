@@ -1,3 +1,5 @@
+module Spec where
+
 import BinaryFilter
 import BloomFilter
 import Test.HUnit
