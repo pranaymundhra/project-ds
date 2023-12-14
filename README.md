@@ -1,32 +1,17 @@
 # project-cis5520
 
-This is an "Empty project" for Haskell. It is configured in the same way as
-the lecture demo and homework assignments for CIS 5520, but contains no
-code. Feel free to use this repository for experimentation!
-
-If you want to change the name of this project, look for all occurrences of
-`project-cis5520` in the `project-cis5520.cabal` file and in the `hie.yaml` 
-file. (And change the name of the cabal file to match your new name!)
-
 ## Module organization
 
-Haskell packages typically divide their source code into three separate places:
-
-  - The bulk of your code should be developed as a reusable library in 
-    modules in the `src` directory. We've created [Lib.hs](src/Lib.hs) 
-    for you to get started. You can add additional modules here.
-  
-  - The entry point for your executable is in [Main.hs](app/Main.hs). 
-  
-  - All of your test cases should be in [the test directory](test/Spec.hs).
+The bulk of our code is in the src directory, including the library modules for the BloomFilter, SkipList, and the many applications we have included. Test cases are in the test directory. 
+common_passwords.csv is a Kaggle dataset available for free with ~10,000 common passwords. 
+Please note that Murmur.hs was NOT written by us, but was copied directly from the MurmurHash3 implementation publicly available here: https://hackage.haskell.org/package/murmur3
 
 ## Building, running, and testing
 
-This project compiles with `stack build`. 
-You can run the main executable with `stack run`.
-You can run the tests with `stack test`. 
+You can run the test cases by running "stack ghci Spec.hs" in the test directory and then invoking main. 
+Running the demo requires you to run "stack ghci DemoBloomFilter.hs" in the src directory and then 
+trying main, main' and finale with reallybadhash, badhash and samplehash. Be warned that finale in particular is extremely slow when run with badhash because of the use of the modulo, and that it WILL run into an infinite loop if you try to run it with reallybadhash. 
 
-Finally, you can start a REPL with `stack ghci`.
 
 ## Importing additional libraries
 
