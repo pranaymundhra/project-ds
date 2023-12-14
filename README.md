@@ -1,5 +1,7 @@
 # project-cis5520
 
+This project is put together by Audrey Keener (keenera) and Pranay Mundhra (pmundhra)
+
 ## Module organization
 
 The bulk of our code is in the src directory, including the library modules for the BloomFilter, SkipList, and the many applications we have included. Test cases are in the test directory. 
