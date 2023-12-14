@@ -9,5 +9,9 @@ import TestSkipList
 
 main :: IO ()
 main = do
-  putStrLn someFunc
-  putStrLn "Test suite not yet implemented"
+  putStrLn "*** Testing Binary BloomFilter ***"
+  TestBloomFilter.qcBin
+  putStrLn "*** Testing Integer BloomFilter ***"
+  TestBloomFilter.qcInt
+  putStrLn "*** Testing SkipList ***"
+  TestSkipList.qcSkipList
