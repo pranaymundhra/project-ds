@@ -1,7 +1,6 @@
 module BloomFilter where
 
 import Data.IntSet (IntSet, empty, insert, member)
-import Debug.Trace
 import HashFunction (Hash (Hasher), Seed (Se), customShow, exampleHash, genBoundedIntHasher)
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
@@ -112,7 +111,7 @@ errorThreshold' filter list threshold gen = go filter list threshold gen 0 10000
     go :: (Eq a) => BloomFilter a -> [a] -> Double -> Gen a -> Int -> Int -> Gen Bool
     go filter list tr gen num left =
       case left of
-        0 -> trace (show num) pure (num <= floor (tr * 10000))
+        0 -> pure (num <= floor (tr * 10000))
         x -> do
           n <- gen
           if n `elem` list
