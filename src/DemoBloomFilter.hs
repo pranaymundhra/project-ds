@@ -43,14 +43,6 @@ myBloomFilter = fromList [samplehash] demowords
 -- >>> exists "haskell" myBloomFilter
 -- False
 
-main :: [String] -> IO ()
-main b = do
-  csvData <- BL.readFile "src/common_passwords.csv"
-  case decode NoHeader csvData of
-    Left err -> putStrLn err
-    Right v -> V.forM_ v $ \(p, x1 :: Int, x2 :: Int, x3 :: Int, x4 :: Int, x5 :: Int, x6 :: Int, x7 :: Int, x8 :: Int) ->
-      do putStrLn $ p ++ " is the password"
-
 main' :: Hash String -> IO ()
 main' h = do
   csvData <- BL.readFile "src/common_passwords.csv"
@@ -59,4 +51,15 @@ main' h = do
     Right v -> do
       let passwordList = foldr (\(p, x1 :: Int, x2 :: Int, x3 :: Int, x4 :: Int, x5 :: Int, x6 :: Int, x7 :: Int, x8 :: Int) acc -> p : acc) [] v
           b = fromList [h] passwordList
-      print (exists "password" b)
+      print (exists "pwd" b)
+
+main :: Hash String -> IO ()
+main h = do
+  csvData <- BL.readFile "src/common_passwords.csv"
+  case decode NoHeader csvData of
+    Left err -> error "error"
+    Right v -> do
+      let passwordList = foldr (\(p, x1 :: Int, x2 :: Int, x3 :: Int, x4 :: Int, x5 :: Int, x6 :: Int, x7 :: Int, x8 :: Int) acc -> p : acc) [] v
+          b = fromList [h] passwordList
+      -- x = frequency [(100, arbitrary :: Gen String), (1, elements passwordList)]
+      sample (errorThreshold' b passwordList 0 arbitrary)
