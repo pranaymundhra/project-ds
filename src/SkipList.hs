@@ -86,7 +86,7 @@ insert a sl@(Slist h tl) = do
     insertMain :: Ord a => a -> Node a -> Int -> (Int, Node a)
     insertMain a n iHeight
       | iHeight == 0 = (iHeight, insertAtBaseLayer a n)
-      | otherwise = insertUp a n iHeight
+      | otherwise = insertOtherLayer a n iHeight
     insertAtBaseLayer :: Ord a => a -> Node a -> Node a
     insertAtBaseLayer a Null = ListNode Null a Null
     insertAtBaseLayer a (StartNode next b) = StartNode (insertAtBaseLayer a next) b
@@ -94,11 +94,11 @@ insert a sl@(Slist h tl) = do
       | a > v = ListNode (insertAtBaseLayer a next) v b
       | a == v = n
       | otherwise = ListNode n a (insertAtBaseLayer a b)
-    insertUp :: Ord a => a -> Node a -> Int -> (Int, Node a)
-    insertUp a Null iHeight
+    insertOtherLayer :: Ord a => a -> Node a -> Int -> (Int, Node a)
+    insertOtherLayer a Null iHeight
       | iHeight == 0 = (iHeight, insertAtBaseLayer a Null)
       | otherwise = (0, StartNode (insertAtBaseLayer a Null) Null)
-    insertUp a n iHeight
+    insertOtherLayer a n iHeight
       | iHeight == 0 = (iHeight, insertAtBaseLayer a n)
       | otherwise =
         let (h, newB) = insertMain a (below n) (iHeight - 1)
