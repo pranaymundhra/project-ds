@@ -25,8 +25,8 @@ isEmpty :: Ord a => SortedSet a -> Bool
 isEmpty s = SkipList.length s == 0
 
 -- remove the element from the sorted set
-remove :: Ord a => a -> SortedSet a -> Gen (SortedSet a)
-remove = SkipList.delete'
+remove :: Ord a => a -> SortedSet a -> SortedSet a
+remove = SkipList.delete
 
 -- size
 size :: Ord a => SortedSet a -> Int
@@ -42,7 +42,7 @@ fromList = SkipList.fromList
 
 -- get the first element of the sorted set
 first :: SortedSet a -> Maybe a
-first (Slist _ tl) = firstVal (SkipList.getBottomLayer tl)
+first (Slist tl) = firstVal (SkipList.getBottomLayer tl)
   where
     firstVal :: Node a -> Maybe a
     firstVal Null = Nothing

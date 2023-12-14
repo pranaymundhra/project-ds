@@ -1,13 +1,10 @@
 module SkipList where
 
-import Data.List (nub, sort)
-import HashFunction (Seed (Se))
+import Data.List (nub, sort, delete)
 import System.Random (StdGen)
 import System.Random qualified as Random (mkStdGen, uniform)
 import Test.QuickCheck
 import Control.Monad
-
-import Debug.Trace as Debug
 
 -- used for generating height of an inserted node (geometrically distributed)
 genGeoVal :: Gen Int
@@ -35,41 +32,32 @@ equalsNodeVal :: Eq a => a -> Node a -> Bool
 equalsNodeVal a (ListNode _ val _) = a == val
 equalsNodeVal _ _ = False
 
+-- checks if value a is less than the value in the node
 lessThanNodeVal :: Ord a => a -> Node a -> Bool
 lessThanNodeVal a (ListNode _ val _) = a < val
 lessThanNodeVal a (StartNode _ _) = False
 lessThanNodeVal a Null = True
 
+-- checks if value a is greater than the value in the node
 greaterThanNodeVal :: Ord a => a -> Node a -> Bool
 greaterThanNodeVal a (ListNode _ val _) = a > val
 greaterThanNodeVal a (StartNode _ _) = True
 greaterThanNodeVal a Null = False
 
 -- no duplicates supported
-data SkipList a = Slist {height :: Int, topLeft :: Node a}
+data SkipList a = Slist {topLeft :: Node a}
 
 -- | Empty skip list
 empty :: SkipList a
-empty = Slist 0 Null
+empty = Slist Null
 
 -- | Converts a list of elements into a skip list
 fromList :: Ord a => [a] -> Gen (SkipList a)
 fromList = foldM (flip insert) empty
 
-testContains :: Ord a => Gen (SkipList a) -> a -> Gen Bool
-testContains g a = do
-  sl <- g
-  return $ contains sl a
-
-
-testDelete :: Ord a => a -> Gen (SkipList a) -> Gen (SkipList a)
-testDelete a g = do
-  sl <- g
-  delete' a sl
-
 -- | Converts a skip list to list
 toList :: SkipList a -> [a]
-toList (Slist _ tl) = listValues (getBottomLayer tl)
+toList (Slist tl) = listValues (getBottomLayer tl)
   where
     listValues :: Node a -> [a]
     listValues Null = []
@@ -78,10 +66,10 @@ toList (Slist _ tl) = listValues (getBottomLayer tl)
 
 -- | Inserts the given element into the skip list
 insert :: Ord a => a -> SkipList a -> Gen (SkipList a)
-insert a sl@(Slist h tl) = do
+insert a sl@(Slist tl) = do
   insertionHeight <- genGeoVal
   if contains sl a then return sl
-  else return $ trace (show insertionHeight) (Slist (max insertionHeight h) (snd (insertMain a tl insertionHeight)))
+  else return (Slist (snd (insertMain a tl insertionHeight)))
   where
     insertMain :: Ord a => a -> Node a -> Int -> (Int, Node a)
     insertMain a n iHeight
@@ -106,60 +94,29 @@ insert a sl@(Slist h tl) = do
             then (h, n {next = insertAtBaseLayer a (next n)})
             else (h, StartNode (next n) newB)
 
-{-
 -- | Deletes the given element from the skip list
 delete :: Ord a => a -> SkipList a -> SkipList a
-delete a (Slist h Null) = Slist 0 Null
-delete a (Slist h n) = Slist h (searchAndDelete n a)
+delete k (Slist tl) = Slist (searchAndDelete tl)
   where
-    fixPointersAux :: Node a -> Node a -> Node a
-    fixPointersAux Null nodeToDelete = next nodeToDelete
-    fixPointersAux node nodeToDelete =
-      node {next = fixPointersAux (next node) nodeToDelete}
-    fixPointers :: Node a -> Node a -> Node a
-    fixPointers Null _ = Null
-    fixPointers prev nodeToDelete =
-      (fixPointersAux prev nodeToDelete)
-        {below = fixPointers (below prev) (below nodeToDelete)}
-    searchAndDelete :: Ord a => Node a -> a -> Node a
-    searchAndDelete Null _ = Null
-    searchAndDelete node@(StartNode n b) a =
-      if lessThanNodeVal a n then node {below = searchAndDelete b a}
-      else node {next = searchAndDelete n a}
-    searchAndDelete node@(ListNode n v b) a
-      | equalsNodeVal a n = fixPointers node n
-      | lessThanNodeVal a n = node {below = searchAndDelete b a}
-      | otherwise = node {next = searchAndDelete n a}
--}
-delete' :: Ord a => a -> SkipList a -> Gen (SkipList a)
-delete' _ (Slist _ Null) = return $ Slist 0 Null  -- Skip list is empty, nothing to delete
-
-delete' target (Slist h tl) = do
-  (_, updatedTop) <- deleteFromLayer target tl h
-  return $ Slist h updatedTop
-
-deleteFromLayer :: Ord a => a -> Node a -> Int -> Gen (Bool, Node a)
-deleteFromLayer _ Null _ = return (False, Null)  -- Element not found
-
--- Delete from the current layer
-deleteFromLayer target (StartNode next belowNode) h = do
-  (deleted, updatedNext) <- deleteFromLayer target next h
-  return (deleted, StartNode updatedNext belowNode)
-
-deleteFromLayer target (ListNode nextNode value belowNode) h
-  | equalsNodeVal target nextNode = do
-    (deleted, updatedBelow) <- deleteFromLayer target belowNode (h - 1)
-    return (deleted, updatedBelow)
-  | lessThanNodeVal target nextNode = do
-    (deleted, updatedNext) <- deleteFromLayer target nextNode h
-    return (deleted, ListNode updatedNext value belowNode)
-  | otherwise = do
-    (deleted, updatedBelow) <- deleteFromLayer target belowNode (h - 1)
-    return (deleted, ListNode nextNode value updatedBelow)
+    searchAndDelete Null = Null
+    searchAndDelete node
+      | equalsNodeVal k (next node) =
+        updatePointers node {next = Null} (next node)
+      | greaterThanNodeVal k (next node) =
+        node {next = searchAndDelete $ next node}
+      | equalsNodeVal k node = updatePointers (StartNode {next = Null, below = below node}) node
+      | otherwise = node {below = searchAndDelete $ below node}
+    updatePointers Null _ = Null
+    updatePointers start toDelete =
+      (updatePointersAux start)
+      {below = updatePointers (below start) $ below toDelete}
+      where
+        updatePointersAux Null = next toDelete
+        updatePointersAux n = n {next = updatePointersAux $ next n}
 
 -- Get the length (number of elements) of a skip list
 length :: SkipList a -> Int
-length (Slist _ tl) = getLength (getBottomLayer tl)
+length (Slist tl) = getLength (getBottomLayer tl)
   where
     getLength :: Node a -> Int
     getLength Null = 0
@@ -168,8 +125,8 @@ length (Slist _ tl) = getLength (getBottomLayer tl)
 
 -- | Checks whether the skip list contains the given element
 contains :: Ord a => SkipList a -> a -> Bool
-contains (Slist _ Null) a = False
-contains (Slist _ n) a = search n a
+contains (Slist Null) a = False
+contains (Slist n) a = search n a
   where
     search :: (Ord a) => Node a -> a -> Bool
     search Null _ = False
@@ -182,7 +139,7 @@ contains (Slist _ n) a = search n a
 append :: Ord a => SkipList a -> SkipList a -> Gen (SkipList a)
 append x y = foldM (flip insert) y (toList x)
 
--- Helper for length and toList
+-- Helper for length and toList - traverses 'below' fields along left spine
 getBottomLayer :: Node a -> Node a
 getBottomLayer sn@(StartNode _ Null) = sn
 getBottomLayer sn@(StartNode _ b) = getBottomLayer b
@@ -203,10 +160,3 @@ instance (Show a) => Show (Node a) where
   show Null = "Null"
   show (StartNode n b) = "S."
   show (ListNode n v b) = show v
-
-prop_length_fromList :: [Int] -> Property
-prop_length_fromList list = forAll slGen $ \sl ->
-  SkipList.length sl == Prelude.length uniques
-  where
-    uniques = nub (sort list)
-    slGen = fromList uniques
