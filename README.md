@@ -7,6 +7,7 @@ This project is put together by Audrey Keener (keenera) and Pranay Mundhra (pmun
 The bulk of our code is in the src directory, including the library modules for the BloomFilter, SkipList, and the many applications we have included. Test cases are in the test directory. 
 common_passwords.csv is a Kaggle dataset available for free with ~10,000 common passwords. 
 Please note that Murmur.hs was NOT written by us, but was copied directly from the MurmurHash3 implementation publicly available here: https://hackage.haskell.org/package/murmur3
+Running all of this code has a number of dependencies all of which are enlisted in the project-cis5520.cabal file. In particular, we used cassava for parsing our dataset, the Murmur Hash function, and a few "standard" libraries such as Control.Monad and QuickCheck, among others. 
 
 ## Building, running, and testing
 
